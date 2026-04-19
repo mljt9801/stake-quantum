@@ -7,3 +7,4 @@ node_modules/
 venv/
 *.swp
 *.swo
+.worktrees/
