@@ -65,8 +65,13 @@ else:
     REDIS_DB = 0
     REDIS_SSL = False
 
-QUEUE_NAME = os.getenv("QUEUE_NAME", "claim_queue")
+# Queue Configuration
+# Default to VIP queue for high-priority claims
+QUEUE_NAME = os.getenv("QUEUE_NAME", os.getenv("VIP_QUEUE_NAME", "vip_claim_queue"))
 RESULT_CHANNEL = os.getenv("RESULT_CHANNEL", "claim_results")
+
+# Fallback queue for free users (if this solver is configured for free claims)
+FREE_QUEUE_NAME = os.getenv("FREE_QUEUE_NAME", "free_claim_queue")
 
 # --- Node Configuration ---
 NODE_ID = os.getenv("NODE_ID", "node-default")
