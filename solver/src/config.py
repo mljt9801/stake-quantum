@@ -67,6 +67,11 @@ else:
 
 QUEUE_NAME = os.getenv("QUEUE_NAME", "claim_queue")
 RESULT_CHANNEL = os.getenv("RESULT_CHANNEL", "claim_results")
+ACCOUNT_EVENTS_CHANNEL = os.getenv("ACCOUNT_EVENTS_CHANNEL", "events:accounts")
+RUNTIME_ENABLED_ACCOUNTS_KEY = os.getenv("RUNTIME_ENABLED_ACCOUNTS_KEY", "runtime:accounts:enabled")
+RUNTIME_ACCOUNT_KEY_PREFIX = os.getenv("RUNTIME_ACCOUNT_KEY_PREFIX", "runtime:account:")
+RUNTIME_TOKENS_KEY_PREFIX = os.getenv("RUNTIME_TOKENS_KEY_PREFIX", "runtime:tokens:")
+RUNTIME_TOKENS_META_KEY_PREFIX = os.getenv("RUNTIME_TOKENS_META_KEY_PREFIX", "runtime:tokens:meta:")
 
 # --- Node Configuration ---
 NODE_ID = os.getenv("NODE_ID", "node-default")
@@ -80,6 +85,10 @@ USE_STEALTH = os.getenv("USE_STEALTH", "true").lower() == "true"
 CLAIM_CURRENCY = os.getenv("CLAIM_CURRENCY", "usdt").lower()
 CLAIM_RETRIES = int(os.getenv("CLAIM_RETRIES", 3))
 CLAIM_BACKOFF_BASE = int(os.getenv("CLAIM_BACKOFF_BASE", 2)) # seconds
+TOKEN_POOL_TARGET = int(os.getenv("TOKEN_POOL_TARGET", 2))
+TOKEN_TTL_SECONDS = int(os.getenv("TOKEN_TTL_SECONDS", 90))
+TOKEN_REFRESH_MARGIN_SECONDS = int(os.getenv("TOKEN_REFRESH_MARGIN_SECONDS", 20))
+TOKEN_MAINTAIN_INTERVAL_SECONDS = float(os.getenv("TOKEN_MAINTAIN_INTERVAL_SECONDS", 5))
 
 # --- Stake Configuration ---
 STAKE_BASE_URL = "https://stake.com"

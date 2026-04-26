@@ -10,4 +10,5 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=builder /app/main .
+ENV PORT=3000
 CMD ["./main"]

@@ -21,24 +21,19 @@ RUN apt-get update && apt-get install -y \
     libasound2 \
     && rm -rf /var/lib/apt/lists/*
 
-# 2. Install Playwright & Firefox
-RUN pip install playwright
-RUN playwright install firefox
-
-# 3. Install Playwright Stealth
-RUN pip install playwright-stealth
-
-# 4. Setup App
+# 2. Setup App
 WORKDIR /app
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+RUN python -m playwright install firefox
 
 COPY src/ ./src/
 
-# 5. Environment Variables
+# 3. Environment Variables
 ENV DISPLAY=:99
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+ENV PORT=8000
 
-# 6. Run Xvfb + App
+# 4. Run Xvfb + App
 CMD ["sh", "-c", "Xvfb :99 -screen 0 1920x1080x24 & python -m src.main"]

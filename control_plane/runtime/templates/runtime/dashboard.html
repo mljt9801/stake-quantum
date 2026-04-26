@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Stake Quantum Runtime</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 32px; color: #1f2937; }
+        h1, h2 { margin-bottom: 12px; }
+        .summary { display: flex; gap: 16px; margin-bottom: 24px; }
+        .card { border: 1px solid #d1d5db; border-radius: 8px; padding: 16px; min-width: 180px; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 24px; }
+        th, td { border: 1px solid #d1d5db; padding: 10px; text-align: left; }
+        th { background: #f3f4f6; }
+        .empty { color: #6b7280; font-style: italic; }
+    </style>
+</head>
+<body>
+    <h1>Runtime Dashboard</h1>
+
+    <div class="summary">
+        <div class="card">
+            <strong>Accounts</strong>
+            <div>{{ summary.account_count }}</div>
+        </div>
+        <div class="card">
+            <strong>Enabled Accounts</strong>
+            <div>{{ summary.enabled_accounts }}</div>
+        </div>
+        <div class="card">
+            <strong>Connected Clients</strong>
+            <div>{{ summary.connected_clients }}</div>
+        </div>
+    </div>
+
+    <h2>Connected Browser Clients</h2>
+    {% if connected_clients %}
+    <table>
+        <thead>
+            <tr>
+                <th>Client ID</th>
+                <th>Remote IP</th>
+                <th>User Agent</th>
+                <th>Last Seen</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for client in connected_clients %}
+            <tr>
+                <td>{{ client.client_id }}</td>
+                <td>{{ client.remote_ip }}</td>
+                <td>{{ client.user_agent }}</td>
+                <td>{{ client.last_seen_at }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty">No websocket browser clients are connected right now.</p>
+    {% endif %}
+
+    <h2>Token Pool Health</h2>
+    {% if token_health %}
+    <table>
+        <thead>
+            <tr>
+                <th>Label</th>
+                <th>Username</th>
+                <th>Enabled</th>
+                <th>Available Tokens</th>
+                <th>Target Tokens</th>
+                <th>Updated</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in token_health %}
+            <tr>
+                <td>{{ row.label }}</td>
+                <td>{{ row.username }}</td>
+                <td>{{ row.is_enabled }}</td>
+                <td>{{ row.available_tokens }}</td>
+                <td>{{ row.target_tokens }}</td>
+                <td>{{ row.updated_at }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty">No backend accounts have been created yet.</p>
+    {% endif %}
+</body>
+</html>

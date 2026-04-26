@@ -15,10 +15,13 @@ from starlette.middleware.cors import CORSMiddleware
 # Import local modules
 from .cache import TokenCache
 from .solver import CamofoxSolver
+from .runtime_manager import RuntimeAccountManager
 from .config import (
     REDIS_HOST, REDIS_PORT, REDIS_PASSWORD, REDIS_DB, REDIS_SSL,
     NODE_ID, QUEUE_NAME, RESULT_CHANNEL,
-    STAKE_BASE_URL, CLAIM_CURRENCY, CLAIM_RETRIES, CLAIM_BACKOFF_BASE
+    STAKE_BASE_URL, CLAIM_CURRENCY, CLAIM_RETRIES, CLAIM_BACKOFF_BASE,
+    ACCOUNT_EVENTS_CHANNEL, TOKEN_POOL_TARGET, TOKEN_TTL_SECONDS,
+    TOKEN_REFRESH_MARGIN_SECONDS, TOKEN_MAINTAIN_INTERVAL_SECONDS,
 )
 
 # --- Logging Setup ---
@@ -41,6 +44,7 @@ app.add_middleware(
 # --- Global Instances ---
 solver_instance = CamofoxSolver()
 token_cache = TokenCache(solver_func=solver_instance.solve_turnstile, min_tokens=2, max_tokens=3)
+runtime_account_manager = None
 
 # --- Async Redis Client ---
 redis_client = redis.Redis(
@@ -50,7 +54,7 @@ redis_client = redis.Redis(
     db=REDIS_DB,
     ssl=REDIS_SSL,
     decode_responses=True,
-    socket_timeout=5,
+    socket_timeout=15,
     socket_connect_timeout=5
 )
 
@@ -68,23 +72,34 @@ class ClaimResult(BaseModel):
     node_id: str
     timestamp: str
 
+
+async def solve_runtime_account(account) -> str:
+    return await solver_instance.solve_turnstile(
+        cookies_json=account.cookies_json,
+        user_agent=account.user_agent,
+        proxy_url=account.proxy_url,
+    )
+
 # --- Health Check ---
 @app.get("/health")
 async def health():
     try:
         await redis_client.ping()
         cache_size = len(token_cache.tokens)
+        runtime_accounts = len(runtime_account_manager.accounts) if runtime_account_manager else 0
         return {
             "status": "healthy",
             "node_id": NODE_ID,
             "cache_size": cache_size,
-            "redis_connected": True
+            "redis_connected": True,
+            "runtime_accounts": runtime_accounts,
         }
     except Exception as e:
         return {
             "status": "degraded",
             "node_id": NODE_ID,
             "cache_size": len(token_cache.tokens),
+            "runtime_accounts": len(runtime_account_manager.accounts) if runtime_account_manager else 0,
             "redis_connected": False,
             "error": str(e)
         }
@@ -257,11 +272,26 @@ async def worker_loop():
 # --- Startup Event ---
 @app.on_event("startup")
 async def startup_event():
+    global runtime_account_manager
     logger.info("🔥 Initializing Token Cache (Warming up 2 tokens)...")
+    runtime_account_manager = RuntimeAccountManager(
+        redis_client=redis_client,
+        solver_func=solve_runtime_account,
+        target_tokens=TOKEN_POOL_TARGET,
+        token_ttl_seconds=TOKEN_TTL_SECONDS,
+        refresh_margin_seconds=TOKEN_REFRESH_MARGIN_SECONDS,
+        maintain_interval_seconds=TOKEN_MAINTAIN_INTERVAL_SECONDS,
+    )
+    await runtime_account_manager.load_enabled_accounts()
+
+    pubsub = redis_client.pubsub()
+    await pubsub.subscribe(ACCOUNT_EVENTS_CHANNEL)
+    asyncio.create_task(runtime_account_manager.run_event_listener(pubsub))
     asyncio.create_task(token_cache._initial_warmup())
     asyncio.create_task(worker_loop())
     logger.info("✅ Solver Node Ready for Jobs")
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run(app, host="0.0.0.0", port=port)

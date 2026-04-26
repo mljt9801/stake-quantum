@@ -8,3 +8,7 @@ venv/
 *.swp
 *.swo
 .worktrees/
+control_plane/.env
+control_plane/.venv/
+control_plane/__pycache__/
+control_plane/**/__pycache__/
